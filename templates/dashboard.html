@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        function exportAsImage() {
+            html2canvas(document.getElementById('dashboard')).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'employee-report.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+    </script>
+</head>
+<body>
+    <div id="dashboard">
+        <h1>Employee: {{ employee.name }}</h1>
+        <p>Employee Number: {{ employee.emp_number }}</p>
+        <p>Designation: {{ employee.designation }}</p>
+
+        <h2>Contributions</h2>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Year</th>
+                    <th>Jan</th>
+                    <th>Feb</th>
+                    <th>Mar</th>
+                    <th>Apr</th>
+                    <th>May</th>
+                    <th>Jun</th>
+                    <th>Jul</th>
+                    <th>Aug</th>
+                    <th>Sep</th>
+                    <th>Oct</th>
+                    <th>Nov</th>
+                    <th>Dec</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for year, months in contributions.items() %}
+                    <tr>
+                        <td>{{ year }}</td>
+                        <td>{{ months.get('January', '') }}</td>
+                        <td>{{ months.get('February', '') }}</td>
+                        <td>{{ months.get('March', '') }}</td>
+                        <td>{{ months.get('April', '') }}</td>
+                        <td>{{ months.get('May', '') }}</td>
+                        <td>{{ months.get('June', '') }}</td>
+                        <td>{{ months.get('July', '') }}</td>
+                        <td>{{ months.get('August', '') }}</td>
+                        <td>{{ months.get('September', '') }}</td>
+                        <td>{{ months.get('October', '') }}</td>
+                        <td>{{ months.get('November', '') }}</td>
+                        <td>{{ months.get('December', '') }}</td>
+                        <td>{{ months.values() | sum }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2>Loans</h2>
+        {% if loans %}
+            <ul>
+                {% for loan in loans %}
+                    <li>
+                        Loan No: {{ loan.loan_number }},
+                        Amount: {{ loan.loan_amount }},
+                        Date: {{ loan.loan_date }},
+                        Due: {{ loan.due_amount }},
+                        Check: {{ loan.check_number }}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No loans recorded.</p>
+        {% endif %}
+
+        <h3>Add New Loan</h3>
+        <form method="POST" action="/add_loan">
+            <input type="hidden" name="emp_number" value="{{ employee.emp_number }}">
+            <label>Loan Number: <input type="text" name="loan_number" required></label><br>
+            <label>Loan Date: <input type="date" name="loan_date" required></label><br>
+            <label>Loan Amount: <input type="number" step="0.01" name="loan_amount" required></label><br>
+            <label>Due Amount: <input type="number" step="0.01" name="due_amount" required></label><br>
+            <label>Check Number: <input type="text" name="check_number"></label><br>
+            <button type="submit">Add Loan</button>
+        </form>
+    </div>
+
+    <button onclick="exportAsImage()">Download Report as Image</button>
+    <p><a href="/">Back to Home</a></p>
+</body>
+</html>

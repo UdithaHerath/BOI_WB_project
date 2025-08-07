@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Employee Fund Tracker</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .section { margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 15px; background: #4CAF50; color: white; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="section">
+        <h1>Upload Salary Report</h1>
+        <form method="POST" action="/upload" enctype="multipart/form-data">
+            <input type="file" name="file" accept=".pdf" required>
+            <button type="submit">Upload PDF</button>
+        </form>
+    </div>
+
+    <div class="section">
+        <h1>Search Employee</h1>
+        <form method="GET" action="/employee">
+            <input type="text" name="emp_number" placeholder="Enter Employee Number" required>
+            <button type="submit">Search</button>
+        </form>
+    </div>
+
+    <div class="section">
+        <p><a href="/documents">View Uploaded Documents</a></p>
+    </div>
+</body>
+</html>
