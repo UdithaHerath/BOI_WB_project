@@ -93,5 +93,83 @@
 
     <button onclick="exportAsImage()">Download Report as Image</button>
     <p><a href="/">Back to Home</a></p>
+
+<!-- Add this section anywhere in dashboard.html -->
+<div class="documents-section">
+    <h2>Employee Documents</h2>
+
+    {% if employee.documents %}
+        <table class="documents-table">
+            <thead>
+                <tr>
+                    <th>Document Name</th>
+                    <th>Upload Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in employee.documents %}
+                    <tr>
+                        <td>{{ doc.document_name }}</td>
+                        <td>{{ doc.upload_date.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            <a href="/download_employee_document/{{ doc.file_path }}"
+                               class="download-btn">
+                                Download
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No documents uploaded yet.</p>
+    {% endif %}
+
+    <h3>Upload New Document</h3>
+    <form method="POST" action="/upload_employee_document/{{ employee.emp_number }}"
+          enctype="multipart/form-data">
+        <input type="file" name="document" required>
+        <button type="submit">Upload Document</button>
+    </form>
+</div>
+
+<!-- Add this CSS to the existing style section -->
+<style>
+    .documents-section {
+        margin-top: 40px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+    }
+
+    .documents-table {
+        width: 100%;
+        margin-bottom: 20px;
+        border-collapse: collapse;
+    }
+
+    .documents-table th,
+    .documents-table td {
+        padding: 12px 15px;
+        border: 1px solid #dee2e6;
+    }
+
+    .documents-table th {
+        background-color: #e9ecef;
+    }
+
+    .download-btn {
+        display: inline-block;
+        padding: 6px 12px;
+        background: #17a2b8;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+    }
+</style>
+
+
 </body>
 </html>

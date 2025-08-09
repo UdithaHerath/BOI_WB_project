@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory
-from database import Session, Employee, Contribution, Loan
+from database import Session, Employee, Contribution, Loan, EmployeeDocument
 import os
 from datetime import datetime
 from pdf_processor import extract_employee_data, save_to_database
+from werkzeug.utils import secure_filename
+from sqlalchemy.orm import joinedload
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -10,6 +12,10 @@ app.config['ALLOWED_EXTENSIONS'] = {'pdf'}
 
 # Create uploads directory if not exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# Add after UPLOAD_FOLDER config
+app.config['EMPLOYEE_DOCUMENTS_FOLDER'] = 'employee_documents'
+os.makedirs(app.config['EMPLOYEE_DOCUMENTS_FOLDER'], exist_ok=True)
 
 
 # Home Page - Document Upload & Search
@@ -42,7 +48,7 @@ def upload_file():
     return redirect(request.url)
 
 
-# Employee Dashboard
+# Update the employee_dashboard route
 @app.route('/employee')
 def employee_dashboard():
     emp_number = request.args.get('emp_number')
@@ -50,28 +56,31 @@ def employee_dashboard():
         return redirect(url_for('index'))
 
     session = Session()
-    employee = session.query(Employee).filter_by(emp_number=emp_number).first()
+    try:
+        employee = session.query(Employee).options(
+            joinedload(Employee.documents)
+        ).filter_by(emp_number=emp_number).first()
 
-    if not employee:
+        if not employee:
+            return "Employee not found", 404
+
+        # Get contributions grouped by year
+        contributions = session.query(Contribution).filter_by(emp_number=emp_number).all()
+        contributions_by_year = {}
+        for contrib in contributions:
+            if contrib.year not in contributions_by_year:
+                contributions_by_year[contrib.year] = {}
+            contributions_by_year[contrib.year][contrib.month] = contrib.amount
+
+        # Get loans
+        loans = session.query(Loan).filter_by(emp_number=emp_number).all()
+
+        return render_template('dashboard.html',
+                               employee=employee,
+                               contributions=contributions_by_year,
+                               loans=loans)
+    finally:
         session.close()
-        return "Employee not found", 404
-
-    # Get contributions grouped by year
-    contributions = session.query(Contribution).filter_by(emp_number=emp_number).all()
-    contributions_by_year = {}
-    for contrib in contributions:
-        if contrib.year not in contributions_by_year:
-            contributions_by_year[contrib.year] = {}
-        contributions_by_year[contrib.year][contrib.month] = contrib.amount
-
-    # Get loans
-    loans = session.query(Loan).filter_by(emp_number=emp_number).all()
-    session.close()
-
-    return render_template('dashboard.html',
-                           employee=employee,
-                           contributions=contributions_by_year,
-                           loans=loans)
 
 
 # Add Loan
@@ -144,6 +153,52 @@ def filter_loans():
                            loans=loans,
                            start_date=start_date,
                            end_date=end_date)
+
+
+# Update the upload_employee_document function
+@app.route('/upload_employee_document/<emp_number>', methods=['POST'])
+def upload_employee_document(emp_number):
+    if 'document' not in request.files:
+        return redirect(url_for('employee_dashboard', emp_number=emp_number))
+
+    file = request.files['document']
+    if file.filename == '':
+        return redirect(url_for('employee_dashboard', emp_number=emp_number))
+
+    if file:
+        # Secure filename and create unique path
+        filename = secure_filename(file.filename)
+        unique_filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
+        save_path = os.path.join(app.config['EMPLOYEE_DOCUMENTS_FOLDER'], unique_filename)
+        file.save(save_path)
+
+        # Save to database
+        session = Session()
+        try:
+            new_doc = EmployeeDocument(
+                emp_number=emp_number,
+                document_name=filename,
+                file_path=unique_filename
+            )
+            session.add(new_doc)
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            print(f"Error saving document: {str(e)}")
+        finally:
+            session.close()
+
+    return redirect(url_for('employee_dashboard', emp_number=emp_number))
+
+
+# Employee Document Download
+@app.route('/download_employee_document/<filename>')
+def download_employee_document(filename):
+    return send_from_directory(
+        app.config['EMPLOYEE_DOCUMENTS_FOLDER'],
+        filename,
+        as_attachment=True
+    )
 
 
 # ===== END NEW ROUTES =====
