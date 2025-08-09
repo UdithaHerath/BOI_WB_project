@@ -94,7 +94,7 @@
     <button onclick="exportAsImage()">Download Report as Image</button>
     <p><a href="/">Back to Home</a></p>
 
-<!-- Add this section anywhere in dashboard.html -->
+<!-- Update the documents table -->
 <div class="documents-section">
     <h2>Employee Documents</h2>
 
@@ -104,7 +104,7 @@
                 <tr>
                     <th>Document Name</th>
                     <th>Upload Date</th>
-                    <th>Action</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -112,11 +112,35 @@
                     <tr>
                         <td>{{ doc.document_name }}</td>
                         <td>{{ doc.upload_date.strftime('%Y-%m-%d') }}</td>
-                        <td>
+                        <td class="document-actions">
                             <a href="/download_employee_document/{{ doc.file_path }}"
-                               class="download-btn">
+                               class="action-btn download-btn">
                                 Download
                             </a>
+
+                            <button class="action-btn rename-btn"
+                                    onclick="showRenameForm({{ doc.id }}, '{{ doc.document_name }}')">
+                                Rename
+                            </button>
+
+                            <form method="POST" action="/delete_employee_document/{{ doc.id }}"
+                                  class="delete-form"
+                                  onsubmit="return confirm('Are you sure you want to delete this document?');">
+                                <button type="submit" class="action-btn delete-btn">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+
+                    <!-- Rename Form (hidden by default) -->
+                    <tr id="rename-form-{{ doc.id }}" class="rename-form" style="display: none;">
+                        <td colspan="3">
+                            <form method="POST" action="/rename_employee_document/{{ doc.id }}">
+                                <input type="text" name="new_name" value="{{ doc.document_name }}"
+                                       class="rename-input" required>
+                                <button type="submit" class="save-rename-btn">Save</button>
+                                <button type="button" class="cancel-rename-btn"
+                                        onclick="hideRenameForm({{ doc.id }})">Cancel</button>
+                            </form>
                         </td>
                     </tr>
                 {% endfor %}
@@ -126,6 +150,29 @@
         <p>No documents uploaded yet.</p>
     {% endif %}
 
+    <!-- Add this JavaScript for rename functionality -->
+    <script>
+        function showRenameForm(docId, currentName) {
+            // Hide all rename forms first
+            document.querySelectorAll('.rename-form').forEach(form => {
+                form.style.display = 'none';
+            });
+
+            // Show this document's rename form
+            const form = document.getElementById(`rename-form-${docId}`);
+            form.style.display = '';
+
+            // Focus the input field
+            const input = form.querySelector('input[name="new_name"]');
+            input.focus();
+            input.select();
+        }
+
+        function hideRenameForm(docId) {
+            document.getElementById(`rename-form-${docId}`).style.display = 'none';
+        }
+    </script>
+
     <h3>Upload New Document</h3>
     <form method="POST" action="/upload_employee_document/{{ employee.emp_number }}"
           enctype="multipart/form-data">
@@ -134,39 +181,64 @@
     </form>
 </div>
 
-<!-- Add this CSS to the existing style section -->
+<!-- Update the CSS -->
 <style>
-    .documents-section {
-        margin-top: 40px;
-        padding: 20px;
-        background: #f8f9fa;
-        border-radius: 8px;
-        border: 1px solid #dee2e6;
+    .document-actions {
+        display: flex;
+        gap: 8px;
     }
 
-    .documents-table {
-        width: 100%;
-        margin-bottom: 20px;
-        border-collapse: collapse;
-    }
-
-    .documents-table th,
-    .documents-table td {
-        padding: 12px 15px;
-        border: 1px solid #dee2e6;
-    }
-
-    .documents-table th {
-        background-color: #e9ecef;
+    .action-btn {
+        padding: 6px 12px;
+        border-radius: 4px;
+        text-decoration: none;
+        cursor: pointer;
+        border: none;
+        font-size: 14px;
     }
 
     .download-btn {
-        display: inline-block;
-        padding: 6px 12px;
         background: #17a2b8;
         color: white;
-        text-decoration: none;
+    }
+
+    .rename-btn {
+        background: #ffc107;
+        color: black;
+    }
+
+    .delete-btn {
+        background: #dc3545;
+        color: white;
+    }
+
+    .rename-form {
+        background-color: #f8f9fa;
+    }
+
+    .rename-input {
+        padding: 8px;
+        width: 50%;
+        margin-right: 10px;
+    }
+
+    .save-rename-btn {
+        padding: 8px 15px;
+        background: #28a745;
+        color: white;
+        border: none;
         border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .cancel-rename-btn {
+        padding: 8px 15px;
+        background: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-left: 5px;
     }
 </style>
 

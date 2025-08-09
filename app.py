@@ -201,6 +201,52 @@ def download_employee_document(filename):
     )
 
 
+# Rename Employee Document
+@app.route('/rename_employee_document/<int:doc_id>', methods=['POST'])
+def rename_employee_document(doc_id):
+    new_name = request.form.get('new_name')
+    if not new_name or not new_name.strip():
+        return "Document name cannot be empty", 400
+
+    session = Session()
+    try:
+        document = session.query(EmployeeDocument).get(doc_id)
+        if not document:
+            return "Document not found", 404
+
+        # Update document name
+        document.document_name = new_name.strip()
+        session.commit()
+        return redirect(url_for('employee_dashboard', emp_number=document.emp_number))
+    finally:
+        session.close()
+
+
+# Delete Employee Document
+@app.route('/delete_employee_document/<int:doc_id>', methods=['POST'])
+def delete_employee_document(doc_id):
+    session = Session()
+    try:
+        document = session.query(EmployeeDocument).get(doc_id)
+        if not document:
+            return "Document not found", 404
+
+        emp_number = document.emp_number
+        file_path = document.file_path
+
+        # Delete file from filesystem
+        full_path = os.path.join(app.config['EMPLOYEE_DOCUMENTS_FOLDER'], file_path)
+        if os.path.exists(full_path):
+            os.remove(full_path)
+
+        # Delete database record
+        session.delete(document)
+        session.commit()
+        return redirect(url_for('employee_dashboard', emp_number=emp_number))
+    finally:
+        session.close()
+
+
 # ===== END NEW ROUTES =====
 
 if __name__ == '__main__':
