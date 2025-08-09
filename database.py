@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine, Column, Integer, String, Float, Date
 from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy import Index
 
 Base = declarative_base()
 
@@ -27,6 +28,8 @@ class Loan(Base):
     loan_amount = Column(Float)
     due_amount = Column(Float)
     check_number = Column(String(50))
+
+Index('idx_loan_date', Loan.loan_date)
 
 # Initialize SQLite database
 engine = create_engine('sqlite:///fund_tracker.db')

@@ -117,3 +117,32 @@ def download_file(filename):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+# Loan Filter Page
+@app.route('/loans')
+def loans_page():
+    return render_template('loans.html')
+
+
+# Loan Filter Results
+@app.route('/filter_loans', methods=['POST'])
+def filter_loans():
+    start_date = datetime.strptime(request.form['start_date'], '%Y-%m-%d').date()
+    end_date = datetime.strptime(request.form['end_date'], '%Y-%m-%d').date()
+
+    session = Session()
+
+    # Get loans in date range with employee info
+    loans = session.query(Loan, Employee).join(
+        Employee, Employee.emp_number == Loan.emp_number
+    ).filter(
+        Loan.loan_date.between(start_date, end_date)
+    ).all()
+
+    session.close()
+
+    return render_template('loan_results.html',
+                           loans=loans,
+                           start_date=start_date,
+                           end_date=end_date)

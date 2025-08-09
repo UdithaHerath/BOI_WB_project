@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Loan Report</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .header { background: #4CAF50; color: white; padding: 15px; text-align: center; }
+        .export-btn { padding: 10px 15px; background: #2196F3; color: white; border: none; cursor: pointer; }
+    </style>
+    <script>
+        function exportLoanReport() {
+            html2canvas(document.getElementById('loan-report')).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'loan-report-{{ start_date }}-to-{{ end_date }}.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+    </script>
+</head>
+<body>
+    <div id="loan-report">
+        <div class="header">
+            <h1>Loan Report</h1>
+            <h2>{{ start_date }} to {{ end_date }}</h2>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Loan No</th>
+                    <th>Date</th>
+                    <th>Employee ID</th>
+                    <th>Employee Name</th>
+                    <th>Designation</th>
+                    <th>Loan Amount</th>
+                    <th>Due Amount</th>
+                    <th>Check No</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for loan, employee in loans %}
+                    <tr>
+                        <td>{{ loan.loan_number }}</td>
+                        <td>{{ loan.loan_date }}</td>
+                        <td>{{ loan.emp_number }}</td>
+                        <td>{{ employee.name }}</td>
+                        <td>{{ employee.designation }}</td>
+                        <td>{{ loan.loan_amount }}</td>
+                        <td>{{ loan.due_amount }}</td>
+                        <td>{{ loan.check_number }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="8" style="text-align: center;">No loans found in this period</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="5"><strong>Total</strong></td>
+                    <td><strong>{{ loans | sum(attribute='0.loan_amount') }}</strong></td>
+                    <td><strong>{{ loans | sum(attribute='0.due_amount') }}</strong></td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <button onclick="exportLoanReport()" class="export-btn">Export as Image</button>
+    <button onclick="window.location.href='/loans'">New Filter</button>
+    <button onclick="window.location.href='/'">Back to Home</button>
+</body>
+</html>
