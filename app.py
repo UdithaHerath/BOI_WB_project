@@ -1,5 +1,3 @@
-
-# app.py
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory
 from database import Session, Employee, Contribution, Loan
 import os
@@ -115,10 +113,7 @@ def download_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 
-if __name__ == '__main__':
-    app.run(debug=True)
-
-
+# ===== NEW LOAN MANAGEMENT ROUTES =====
 # Loan Filter Page
 @app.route('/loans')
 def loans_page():
@@ -128,8 +123,11 @@ def loans_page():
 # Loan Filter Results
 @app.route('/filter_loans', methods=['POST'])
 def filter_loans():
-    start_date = datetime.strptime(request.form['start_date'], '%Y-%m-%d').date()
-    end_date = datetime.strptime(request.form['end_date'], '%Y-%m-%d').date()
+    try:
+        start_date = datetime.strptime(request.form['start_date'], '%Y-%m-%d').date()
+        end_date = datetime.strptime(request.form['end_date'], '%Y-%m-%d').date()
+    except ValueError:
+        return "Invalid date format. Use YYYY-MM-DD", 400
 
     session = Session()
 
@@ -146,3 +144,9 @@ def filter_loans():
                            loans=loans,
                            start_date=start_date,
                            end_date=end_date)
+
+
+# ===== END NEW ROUTES =====
+
+if __name__ == '__main__':
+    app.run(debug=True)
